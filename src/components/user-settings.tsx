@@ -28,12 +28,40 @@ import UsernameForm from "./username-form";
 import EditUsernameForm from "./edit-username-form";
 import PullModel from "./pull-model";
 import useChatStore from "@/app/hooks/useChatStore";
+import PDFUploader from "./pdf-uploader";
+import { toast } from "sonner"; 
 
 export default function UserSettings() {
   const [open, setOpen] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
 
   const userName = useChatStore((state) => state.userName);
+  const handlePDFUpload = async (file: File) => {
+    try {
+      setIsUploading(true);
+      const formData = new FormData();
+      formData.append('pdf', file);
 
+      const response = await fetch('/api/process-pdf', {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to process PDF');
+      }
+
+      const data = await response.json();
+      toast.success('PDF uploaded successfully');
+      console.log('Upload successful:', data.path);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Error uploading PDF');
+      console.error('Error:', error);
+    } finally {
+      setIsUploading(false);
+    }
+  };
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
@@ -59,6 +87,12 @@ export default function UserSettings() {
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent className="w-48 p-2">
+      <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
+          <PullModel />
+        </DropdownMenuItem>
+        <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
+          <PDFUploader onPDFUpload={handlePDFUpload} />
+        </DropdownMenuItem>
         <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
           <PullModel />
         </DropdownMenuItem>
