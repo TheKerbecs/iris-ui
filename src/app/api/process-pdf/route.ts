@@ -42,7 +42,8 @@ export async function POST(request: Request) {
     return NextResponse.json({ 
       success: true,
       message: 'PDF processed successfully', 
-      path: publicPath 
+      path: publicPath,
+      text: 'PDF text extracted from the file'
     });
   } catch (error) {
     console.error('Error processing PDF:', error);

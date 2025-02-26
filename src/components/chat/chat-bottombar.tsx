@@ -85,6 +85,7 @@ export default function ChatBottombar({
           return currentInput + pdfHeader + data.text;
         });
         toast.success('PDF content added to message');
+        console.log('PDF text:', data.text);
       } else {
         toast.success('PDF uploaded successfully');
       }
