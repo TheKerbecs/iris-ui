@@ -48,24 +48,47 @@ export default function ChatBottombar({
   const setBase64Images = useChatStore((state) => state.setBase64Images);
   const selectedModel = useChatStore((state) => state.selectedModel);
   const [isUploading, setIsUploading] = useState(false); // Add this state
+
   const handlePDFUpload = async (file: File) => {
     try {
       setIsUploading(true);
       const formData = new FormData();
       formData.append('pdf', file);
-
+  
       const response = await fetch('/api/process-pdf', {
         method: 'POST',
         body: formData,
       });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to process PDF');
+  
+      // Check for non-JSON response
+      const contentType = response.headers.get('content-type');
+      if (!contentType || !contentType.includes('application/json')) {
+        const textResponse = await response.text();
+        console.error('Non-JSON response:', textResponse);
+        throw new Error('Server returned non-JSON response');
       }
-
+  
+      // Only parse the JSON once
       const data = await response.json();
-      toast.success('PDF uploaded successfully');
+      
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to process PDF');
+      }
+      
+      // If there's extracted text, append it to the input
+      if (data.text && setInput) {
+        // Append PDF text to the user's input with a header
+        setInput((currentInput) => {
+          const pdfHeader = currentInput.trim() ? 
+            `\n\nContents of PDF "${file.name}":\n\n` : 
+            `Contents of PDF "${file.name}":\n\n`;
+          return currentInput + pdfHeader + data.text;
+        });
+        toast.success('PDF content added to message');
+      } else {
+        toast.success('PDF uploaded successfully');
+      }
+      
       console.log('Upload successful:', data.path);
     } catch (error) {
       toast.error(error instanceof Error ? error.message : 'Error uploading PDF');
@@ -74,6 +97,7 @@ export default function ChatBottombar({
       setIsUploading(false);
     }
   };
+
   const handleKeyPress = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === "Enter" && !e.shiftKey && !e.nativeEvent.isComposing) {
       e.preventDefault();

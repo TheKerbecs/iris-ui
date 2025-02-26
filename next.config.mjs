@@ -22,6 +22,9 @@ const nextConfig = {
         // !! WARN !!
         ignoreBuildErrors: true,
       },
+      experimental: {
+        appDir: true,
+      },
 };
 
 
