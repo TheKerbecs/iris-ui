@@ -87,9 +87,6 @@ export default function UserSettings() {
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent className="w-48 p-2">
-      <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
-          <PullModel />
-        </DropdownMenuItem>
         <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
           <PDFUploader onPDFUpload={handlePDFUpload} />
         </DropdownMenuItem>

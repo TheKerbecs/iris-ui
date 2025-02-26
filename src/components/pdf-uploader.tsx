@@ -1,54 +1,66 @@
-"use client";
+import React, { useRef } from 'react';
+import { Button } from './ui/button';
+import { FileText } from 'lucide-react';
 
-import React, { useCallback, useState } from 'react';
-import { useDropzone } from 'react-dropzone';
-import { Button } from "./ui/button";
-import { FileIcon, UploadIcon } from "lucide-react";
-import { toast } from "sonner";
+interface PDFUploaderProps {
+  onPDFUpload: (file: File) => void;
+  disabled?: boolean;
+  className?: string;
+  iconOnly?: boolean;
+}
 
-export default function PDFUploader({ onPDFUpload }: { onPDFUpload: (file: File) => void }) {
-  const [isUploading, setIsUploading] = useState(false);
+export default function PDFUploader({ 
+  onPDFUpload, 
+  disabled = false,
+  className = '',
+  iconOnly = false 
+}: PDFUploaderProps) {
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const onDrop = useCallback((acceptedFiles: File[]) => {
-    const file = acceptedFiles[0];
-    if (file) {
-      if (file.type !== 'application/pdf') {
-        toast.error('Please upload a PDF file');
-        return;
-      }
-      
-      setIsUploading(true);
-      // Call the parent's upload handler
+  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file && file.type === 'application/pdf') {
       onPDFUpload(file);
-      setTimeout(() => setIsUploading(false), 1000);
     }
-  }, [onPDFUpload]);
+    // Reset input value to allow uploading the same file again
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
 
-  const { getRootProps, getInputProps, isDragActive } = useDropzone({
-    onDrop,
-    accept: {
-      'application/pdf': ['.pdf']
-    },
-    maxFiles: 1
-  });
+  const handleButtonClick = () => {
+    fileInputRef.current?.click();
+  };
 
   return (
-    <div 
-      {...getRootProps()} 
-      className="flex w-full gap-2 p-1 items-center cursor-pointer hover:bg-accent hover:text-accent-foreground"
-    >
-      {isUploading ? (
-        <>
-          <FileIcon className="w-4 h-4 animate-pulse" />
-          <span>Uploading...</span>
-        </>
+    <>
+      <input
+        type="file"
+        accept="application/pdf"
+        ref={fileInputRef}
+        onChange={handleFileChange}
+        className="hidden"
+      />
+      {iconOnly ? (
+        <Button 
+          type="button"
+          variant="ghost"
+          size="icon"
+          onClick={handleButtonClick}
+          disabled={disabled}
+          className={className}
+        >
+          <FileText className="w-5 h-5" />
+        </Button>
       ) : (
-        <>
-          <UploadIcon className="w-4 h-4" />
-          <input {...getInputProps()} />
-          {isDragActive ? 'Drop PDF here' : 'Import PDF'}
-        </>
+        <div 
+          onClick={handleButtonClick}
+          className={`flex w-full gap-2 p-1 items-center cursor-pointer ${disabled ? 'opacity-50 cursor-not-allowed' : ''}`}
+        >
+          <FileText className="w-4 h-4" />
+          Upload PDF
+        </div>
       )}
-    </div>
+    </>
   );
 }

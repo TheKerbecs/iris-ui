@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { ChatProps } from "./chat";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
@@ -20,6 +20,8 @@ import useChatStore from "@/app/hooks/useChatStore";
 import Image from "next/image";
 import { ChatRequestOptions, Message } from "ai";
 import { ChatInput } from "../ui/chat/chat-input";
+import PDFUploader from "../pdf-uploader"; // Import PDFUploader
+import { toast } from "sonner";
 
 interface ChatBottombarProps {
   handleInputChange: (e: React.ChangeEvent<HTMLTextAreaElement>) => void;
@@ -45,7 +47,33 @@ export default function ChatBottombar({
   const base64Images = useChatStore((state) => state.base64Images);
   const setBase64Images = useChatStore((state) => state.setBase64Images);
   const selectedModel = useChatStore((state) => state.selectedModel);
+  const [isUploading, setIsUploading] = useState(false); // Add this state
+  const handlePDFUpload = async (file: File) => {
+    try {
+      setIsUploading(true);
+      const formData = new FormData();
+      formData.append('pdf', file);
 
+      const response = await fetch('/api/process-pdf', {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to process PDF');
+      }
+
+      const data = await response.json();
+      toast.success('PDF uploaded successfully');
+      console.log('Upload successful:', data.path);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Error uploading PDF');
+      console.error('Error:', error);
+    } finally {
+      setIsUploading(false);
+    }
+  };
   const handleKeyPress = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === "Enter" && !e.shiftKey && !e.nativeEvent.isComposing) {
       e.preventDefault();
@@ -125,10 +153,18 @@ export default function ChatBottombar({
             ) : (
               // Default state
               <div className="flex w-full justify-between">
+              <div className="flex items-center gap-2">
                 <MultiImagePicker
-                  disabled={isLoading}
+                  disabled={isLoading || isUploading}
                   onImagesPick={setBase64Images}
                 />
+                <PDFUploader 
+                  onPDFUpload={handlePDFUpload}
+                  disabled={isLoading || isUploading}
+                  className="h-9 w-9 rounded-full flex justify-center items-center hover:bg-accent"
+                  iconOnly
+                />
+              </div>
                 <div>
                   {/* Microphone button with animation when listening */}
                   <Button
