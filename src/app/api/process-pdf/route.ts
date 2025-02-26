@@ -2,9 +2,9 @@ import { NextResponse } from 'next/server';
 import { writeFile } from 'fs/promises';
 import path from 'path';
 import { mkdir } from 'fs/promises';
-
-// Add these exports to make sure Next.js properly recognizes this as an API route
-export const dynamic = 'force-dynamic';
+// Import pdf-parse using dynamic import to avoid build-time initialization
+// export const dynamic = 'force-dynamic';
+export const runtime = 'nodejs'; // Use Node.js runtime
 
 export async function POST(request: Request) {
   try {
@@ -39,11 +39,16 @@ export async function POST(request: Request) {
     const publicPath = `/uploads/pdfs/${file.name}`;
     console.log('File saved, public path:', publicPath);
     
+    const pdfParse = (await import('pdf-parse')).default;
+    const data = await pdfParse(buffer);
+    const text = data.text;
+    
+    console.log('Text extracted from PDF:', text);
     return NextResponse.json({ 
       success: true,
       message: 'PDF processed successfully', 
       path: publicPath,
-      text: 'PDF text extracted from the file'
+      text: text
     });
   } catch (error) {
     console.error('Error processing PDF:', error);
